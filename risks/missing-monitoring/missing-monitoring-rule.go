@@ -24,7 +24,7 @@ func (r missingMonitoringRule) Category() model.RiskCategory {
 		DetectionLogic:             "Models without a Monitoring platform",
 		RiskAssessment:             "The risk rating depends on the sensitivity of the technical assets and data processed.",
 		FalsePositives:             "None",
-		ModelFailurePossibleReason: false,
+		ModelFailurePossibleReason: true,
 		CWE:                        778,
 	}
 }
