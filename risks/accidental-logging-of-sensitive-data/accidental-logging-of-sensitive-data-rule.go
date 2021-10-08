@@ -4,24 +4,24 @@ import (
 	"github.com/threagile/threagile/model"
 )
 
-type accidentalLoggingOfPiiRule string
+type accidentalLoggingOfSensitiveDataRule string
 
-var CustomRiskRule accidentalLoggingOfPiiRule
+var CustomRiskRule accidentalLoggingOfSensitiveDataRule
 
-func (r accidentalLoggingOfPiiRule) Category() model.RiskCategory {
+func (r accidentalLoggingOfSensitiveDataRule) Category() model.RiskCategory {
 	return model.RiskCategory{
-		Id:                         "accidental-logging-of-pii",
-		Title:                      "Accidental Logging of Personal Identifiable Information",
+		Id:                         "accidental-logging-of-sensitive-data",
+		Title:                      "Accidental Logging of Sensitive Data",
 		Description:                "",
 		Impact:                     "",
 		ASVS:                       "V7.1 - Log Content",
 		CheatSheet:                 "https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html#data-to-exclude",
 		Action:                     "Review logging statements",
-		Mitigation:                 "Review log statements and ensure that personal indenfiable information is not logged without a legit reason.",
+		Mitigation:                 "Review log statements and ensure that sensitive data, such as personal indenfiable information and credentials, is not logged without a legit reason.",
 		Check:                      "Are recommendations from the linked cheat sheet and referenced ASVS chapter applied?",
 		Function:                   model.Development,
 		STRIDE:                     model.InformationDisclosure,
-		DetectionLogic:             "",
+		DetectionLogic:             "Entities processing, or storing, data with confidentiality restricted or higher which sends data to a monitoring target.",
 		RiskAssessment:             "",
 		FalsePositives:             "",
 		ModelFailurePossibleReason: false,
