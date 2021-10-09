@@ -4,14 +4,14 @@ import (
 	"github.com/threagile/threagile/model"
 )
 
-type accidentalLoggingOfSensitiveDataRule string
+type testRule string
 
-var CustomRiskRule accidentalLoggingOfSensitiveDataRule
+var CustomRiskRule testRule
 
-func (r accidentalLoggingOfSensitiveDataRule) Category() model.RiskCategory {
+func (r testRule) Category() model.RiskCategory {
 	return model.RiskCategory{
 		Id:                         "accidental-logging-of-sensitive-data",
-		Title:                      "Accidental Logging of Sensitive Data",
+		Title:                      "Logging of Sensitive Data",
 		Description:                "When storing or processing sensitive data there is a risk that the data is written to logfiles.",
 		Impact:                     "Bypassing access controls to the sensitive data",
 		ASVS:                       "V7.1 - Log Content",
@@ -21,19 +21,19 @@ func (r accidentalLoggingOfSensitiveDataRule) Category() model.RiskCategory {
 		Check:                      "Are recommendations from the linked cheat sheet and referenced ASVS chapter applied?",
 		Function:                   model.Development,
 		STRIDE:                     model.InformationDisclosure,
-		DetectionLogic:             "Entities processing, or storing, data with confidentiality restricted or higher which sends data to a monitoring target.",
-		RiskAssessment:             "",
-		FalsePositives:             "If it's ok to write the data to log, then this can be considered a false positive.",
+		DetectionLogic:             "Entities processing, or storing, data with confidentiality class restricted or higher which sends data to a monitoring target.",
+		RiskAssessment:             "The risk rating depends on the sensitivity of the data processed or stored",
+		FalsePositives:             "None, either the risk is mitigated or accepted",
 		ModelFailurePossibleReason: false,
 		CWE:                        532,
 	}
 }
 
-func (r accidentalLoggingOfSensitiveDataRule) SupportedTags() []string {
-	return []string{"PII", "financial", "credential"}
+func (r testRule) SupportedTags() []string {
+	return []string{}
 }
 
-func GenerateRisks(r accidentalLoggingOfSensitiveDataRule) []model.Risk {
+func (r testRule) GenerateRisks() []model.Risk {
 	risks := make([]model.Risk, 0)
 	for _, id := range model.SortedTechnicalAssetIDs() {
 		technicalAsset := model.ParsedModelRoot.TechnicalAssets[id]
@@ -42,7 +42,9 @@ func GenerateRisks(r accidentalLoggingOfSensitiveDataRule) []model.Risk {
 		}
 		hasSensitiveData := false
 		impact := model.MediumImpact
-		for _, data := range append(technicalAsset.DataAssetsProcessedSorted(), technicalAsset.DataAssetsStoredSorted()...) {
+		datas := append(technicalAsset.DataAssetsProcessedSorted(), technicalAsset.DataAssetsStoredSorted()...)
+		for _, data := range datas {
+			// TODO: Consider data tagged with PII, financial or credential as sensitive irregardless of classification
 			if data.Confidentiality >= model.Restricted {
 				hasSensitiveData = true
 				if data.Confidentiality == model.Confidential && impact == model.MediumImpact {
@@ -58,7 +60,7 @@ func GenerateRisks(r accidentalLoggingOfSensitiveDataRule) []model.Risk {
 			for _, commLink := range commLinks {
 				destination := model.ParsedModelRoot.TechnicalAssets[commLink.TargetId]
 				if destination.Technology == model.Monitoring {
-					risks = append(risks, createRisk(technicalAsset, commLink, impact))
+					risks = append(risks, createRisk(technicalAsset, impact))
 				}
 			}
 		}
@@ -66,20 +68,18 @@ func GenerateRisks(r accidentalLoggingOfSensitiveDataRule) []model.Risk {
 	return risks
 }
 
-func createRisk(technicalAsset model.TechnicalAsset, incomingAccess model.CommunicationLink, impact model.RiskExploitationImpact) model.Risk {
+func createRisk(technicalAsset model.TechnicalAsset, impact model.RiskExploitationImpact) model.Risk {
+	title := "<b>Logging of Sensitive Data</b> risk at <b>" + technicalAsset.Title + "</b>"
 	risk := model.Risk{
-		Category:               CustomRiskRule.Category(),
-		Severity:               model.CalculateSeverity(model.Unlikely, impact),
-		ExploitationLikelihood: model.Unlikely,
-		ExploitationImpact:     impact,
-		Title: "<b>Potential logging of sensitive data</b> over communication link <b>" + incomingAccess.Title + "</b> " +
-			"from <b>" + model.ParsedModelRoot.TechnicalAssets[incomingAccess.SourceId].Title + "</b> " +
-			"to <b>" + technicalAsset.Title + "</b>",
-		MostRelevantTechnicalAssetId:    technicalAsset.Id,
-		MostRelevantCommunicationLinkId: incomingAccess.Id,
-		DataBreachProbability:           model.Improbable,
-		DataBreachTechnicalAssetIDs:     []string{technicalAsset.Id},
+		Category:                     CustomRiskRule.Category(),
+		Severity:                     model.CalculateSeverity(model.Likely, impact),
+		ExploitationLikelihood:       model.Likely,
+		ExploitationImpact:           impact,
+		Title:                        title,
+		MostRelevantTechnicalAssetId: technicalAsset.Id,
+		DataBreachProbability:        model.Improbable,
+		DataBreachTechnicalAssetIDs:  []string{},
 	}
-	risk.SyntheticId = risk.Category.Id + "@" + incomingAccess.Id + "@" + model.ParsedModelRoot.TechnicalAssets[incomingAccess.SourceId].Id + "@" + technicalAsset.Id
+	risk.SyntheticId = risk.Category.Id + "@" + technicalAsset.Id
 	return risk
 }
