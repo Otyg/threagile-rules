@@ -30,5 +30,56 @@ func (r accidentalLoggingOfSensitiveDataRule) Category() model.RiskCategory {
 }
 
 func (r accidentalLoggingOfSensitiveDataRule) SupportedTags() []string {
-	return []string{"PII"}
+	return []string{"PII", "financial", "credential"}
+}
+
+func GenerateRisks(r accidentalLoggingOfSensitiveDataRule) []model.Risk {
+	risks := make([]model.Risk, 0)
+	for _, id := range model.SortedTechnicalAssetIDs() {
+		technicalAsset := model.ParsedModelRoot.TechnicalAssets[id]
+		if technicalAsset.OutOfScope || technicalAsset.Technology == model.Monitoring {
+			continue
+		}
+		hasSensitiveData := false
+		impact := model.MediumImpact
+		for _, data := range append(technicalAsset.DataAssetsProcessedSorted(), technicalAsset.DataAssetsStoredSorted()...) {
+			if data.Confidentiality >= model.Restricted {
+				hasSensitiveData = true
+				if data.Confidentiality == model.Confidential && impact == model.MediumImpact {
+					impact = model.HighImpact
+				}
+				if data.Confidentiality == model.StrictlyConfidential && impact <= model.HighImpact {
+					impact = model.VeryHighImpact
+				}
+			}
+		}
+		if hasSensitiveData {
+			commLinks := technicalAsset.CommunicationLinks
+			for _, commLink := range commLinks {
+				destination := model.ParsedModelRoot.TechnicalAssets[commLink.TargetId]
+				if destination.Technology == model.Monitoring {
+					risks = append(risks, createRisk(technicalAsset, commLink, impact))
+				}
+			}
+		}
+	}
+	return risks
+}
+
+func createRisk(technicalAsset model.TechnicalAsset, incomingAccess model.CommunicationLink, impact model.RiskExploitationImpact) model.Risk {
+	risk := model.Risk{
+		Category:               CustomRiskRule.Category(),
+		Severity:               model.CalculateSeverity(model.Unlikely, impact),
+		ExploitationLikelihood: model.Unlikely,
+		ExploitationImpact:     impact,
+		Title: "<b>Potential logging of sensitive data</b> over communication link <b>" + incomingAccess.Title + "</b> " +
+			"from <b>" + model.ParsedModelRoot.TechnicalAssets[incomingAccess.SourceId].Title + "</b> " +
+			"to <b>" + technicalAsset.Title + "</b>",
+		MostRelevantTechnicalAssetId:    technicalAsset.Id,
+		MostRelevantCommunicationLinkId: incomingAccess.Id,
+		DataBreachProbability:           model.Improbable,
+		DataBreachTechnicalAssetIDs:     []string{technicalAsset.Id},
+	}
+	risk.SyntheticId = risk.Category.Id + "@" + incomingAccess.Id + "@" + model.ParsedModelRoot.TechnicalAssets[incomingAccess.SourceId].Id + "@" + technicalAsset.Id
+	return risk
 }
