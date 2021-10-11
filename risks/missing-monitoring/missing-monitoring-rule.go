@@ -14,9 +14,9 @@ func (r missingMonitoringRule) Category() model.RiskCategory {
 		Title:                      "Missing Monitoring",
 		Description:                "The model is missing a monitoring target for collecting, analysis and alerting on logdata and events.",
 		Impact:                     "Without an external platform for monitoring an attacker might go undetected and might be able to tamper with logfiles etc.",
-		ASVS:                       "V7 - Error Handling and Logging Verification Requirements",
+		ASVS:                       "v4.0.2-7 - Error Handling and Logging Verification Requirements",
 		CheatSheet:                 "",
-		Action:                     "External logging and monitoring",
+		Action:                     "Logging and monitoring",
 		Mitigation:                 "Send logdata and other events to an external platform for storage and analysis.",
 		Check:                      "Are relevant logs sent to an external monitoring platform?",
 		Function:                   model.Architecture,
@@ -37,21 +37,25 @@ func (r missingMonitoringRule) GenerateRisks() []model.Risk {
 	risks := make([]model.Risk, 0)
 	hasMonitoring := false
 	var mostRelevantAsset model.TechnicalAsset
-	impact := model.LowImpact
+	impact := model.MediumImpact
+	probability := model.Likely
 	for _, id := range model.SortedTechnicalAssetIDs() { // use the sorted one to always get the same tech asset with highest sensitivity as example asset
 		techAsset := model.ParsedModelRoot.TechnicalAssets[id]
 		if techAsset.Technology == model.Monitoring {
 			hasMonitoring = true
+			break
 		}
 		if techAsset.HighestConfidentiality() >= model.Confidential ||
 			techAsset.HighestIntegrity() >= model.Critical ||
 			techAsset.HighestAvailability() >= model.Critical {
-			impact = model.MediumImpact
+			impact = model.HighImpact
+			probability = model.VeryLikely
 		}
 		if techAsset.Confidentiality >= model.Confidential ||
 			techAsset.Integrity >= model.Critical ||
 			techAsset.Availability >= model.Critical {
-			impact = model.MediumImpact
+			impact = model.HighImpact
+			probability = model.VeryLikely
 		}
 		// just for referencing the most interesting asset
 		if techAsset.HighestSensitivityScore() > mostRelevantAsset.HighestSensitivityScore() {
@@ -59,17 +63,17 @@ func (r missingMonitoringRule) GenerateRisks() []model.Risk {
 		}
 	}
 	if !hasMonitoring {
-		risks = append(risks, createRisk(mostRelevantAsset, impact))
+		risks = append(risks, createRisk(mostRelevantAsset, impact, probability))
 	}
 	return risks
 }
 
-func createRisk(technicalAsset model.TechnicalAsset, impact model.RiskExploitationImpact) model.Risk {
+func createRisk(technicalAsset model.TechnicalAsset, impact model.RiskExploitationImpact, probability model.RiskExploitationLikelihood) model.Risk {
 	title := "<b>Missing Monitoring (Logging platform)</b> in the threat model (referencing asset <b>" + technicalAsset.Title + "</b> as an example)"
 	risk := model.Risk{
 		Category:                     CustomRiskRule.Category(),
-		Severity:                     model.CalculateSeverity(model.Unlikely, impact),
-		ExploitationLikelihood:       model.Unlikely,
+		Severity:                     model.CalculateSeverity(probability, impact),
+		ExploitationLikelihood:       probability,
 		ExploitationImpact:           impact,
 		Title:                        title,
 		MostRelevantTechnicalAssetId: technicalAsset.Id,
