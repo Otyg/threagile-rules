@@ -65,6 +65,43 @@ func (r missingMonitoringRule) GenerateRisks() []model.Risk {
 	if !hasMonitoring {
 		risks = append(risks, createRisk(mostRelevantAsset, impact, probability))
 	}
+	if hasMonitoring {
+		for _, id := range model.SortedTechnicalAssetIDs() { // use the sorted one to always get the same tech asset with highest sensitivity as example asset
+			techAsset := model.ParsedModelRoot.TechnicalAssets[id]
+			if techAsset.OutOfScope || techAsset.Technology == model.Monitoring {
+				continue
+			}
+			targetMonitor := false
+			impact := model.MediumImpact
+			probability := model.Likely
+			if techAsset.HighestConfidentiality() >= model.Confidential ||
+				techAsset.HighestIntegrity() >= model.Critical ||
+				techAsset.HighestAvailability() >= model.Critical {
+				impact = model.HighImpact
+				probability = model.VeryLikely
+			}
+			if techAsset.Confidentiality >= model.Confidential ||
+				techAsset.Integrity >= model.Critical ||
+				techAsset.Availability >= model.Critical {
+				impact = model.HighImpact
+				probability = model.VeryLikely
+			}
+			// just for referencing the most interesting asset
+			if techAsset.HighestSensitivityScore() > mostRelevantAsset.HighestSensitivityScore() {
+				mostRelevantAsset = techAsset
+			}
+			commLinks := techAsset.CommunicationLinks
+			for _, commLink := range commLinks {
+				destination := model.ParsedModelRoot.TechnicalAssets[commLink.TargetId]
+				if destination.Technology == model.Monitoring {
+					targetMonitor = true
+				}
+			}
+			if !targetMonitor {
+				risks = append(risks, createRisk(mostRelevantAsset, impact, probability))
+			}
+		}
+	}
 	return risks
 }
 
