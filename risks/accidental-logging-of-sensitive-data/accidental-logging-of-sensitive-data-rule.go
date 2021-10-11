@@ -4,19 +4,19 @@ import (
 	"github.com/threagile/threagile/model"
 )
 
-type testRule string
+type accidentalLoggingOfSensitiveDataRule string
 
-var CustomRiskRule testRule
+var CustomRiskRule accidentalLoggingOfSensitiveDataRule
 
-func (r testRule) Category() model.RiskCategory {
+func (r accidentalLoggingOfSensitiveDataRule) Category() model.RiskCategory {
 	return model.RiskCategory{
 		Id:                         "accidental-logging-of-sensitive-data",
 		Title:                      "Logging of Sensitive Data",
 		Description:                "When storing or processing sensitive data there is a risk that the data is written to logfiles.",
 		Impact:                     "Bypassing access controls to the sensitive data",
-		ASVS:                       "V7.1 - Log Content",
+		ASVS:                       "v4.0.2-7.1 - Log Content",
 		CheatSheet:                 "https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html#data-to-exclude",
-		Action:                     "Review logging statements",
+		Action:                     "Logging and monitoring",
 		Mitigation:                 "Review log statements and ensure that sensitive data, such as personal indenfiable information and credentials, is not logged without a legit reason.",
 		Check:                      "Are recommendations from the linked cheat sheet and referenced ASVS chapter applied?",
 		Function:                   model.Development,
@@ -29,11 +29,11 @@ func (r testRule) Category() model.RiskCategory {
 	}
 }
 
-func (r testRule) SupportedTags() []string {
-	return []string{}
+func (r accidentalLoggingOfSensitiveDataRule) SupportedTags() []string {
+	return []string{"PII", "credential"}
 }
 
-func (r testRule) GenerateRisks() []model.Risk {
+func (r accidentalLoggingOfSensitiveDataRule) GenerateRisks() []model.Risk {
 	risks := make([]model.Risk, 0)
 	for _, id := range model.SortedTechnicalAssetIDs() {
 		technicalAsset := model.ParsedModelRoot.TechnicalAssets[id]
@@ -41,11 +41,11 @@ func (r testRule) GenerateRisks() []model.Risk {
 			continue
 		}
 		hasSensitiveData := false
+		sensitiveData := make([]string, 0)
 		impact := model.MediumImpact
 		datas := append(technicalAsset.DataAssetsProcessedSorted(), technicalAsset.DataAssetsStoredSorted()...)
 		for _, data := range datas {
-			// TODO: Consider data tagged with PII, financial or credential as sensitive irregardless of classification
-			if data.Confidentiality >= model.Restricted {
+			if data.Confidentiality >= model.Restricted || data.IsTaggedWithAny(r.SupportedTags()...) {
 				hasSensitiveData = true
 				if data.Confidentiality == model.Confidential && impact == model.MediumImpact {
 					impact = model.HighImpact
@@ -53,6 +53,7 @@ func (r testRule) GenerateRisks() []model.Risk {
 				if data.Confidentiality == model.StrictlyConfidential && impact <= model.HighImpact {
 					impact = model.VeryHighImpact
 				}
+				sensitiveData = append(sensitiveData, data.Id)
 			}
 		}
 		if hasSensitiveData {
@@ -60,7 +61,7 @@ func (r testRule) GenerateRisks() []model.Risk {
 			for _, commLink := range commLinks {
 				destination := model.ParsedModelRoot.TechnicalAssets[commLink.TargetId]
 				if destination.Technology == model.Monitoring {
-					risks = append(risks, createRisk(technicalAsset, impact))
+					risks = append(risks, createRisk(technicalAsset, impact, sensitiveData))
 				}
 			}
 		}
@@ -68,7 +69,7 @@ func (r testRule) GenerateRisks() []model.Risk {
 	return risks
 }
 
-func createRisk(technicalAsset model.TechnicalAsset, impact model.RiskExploitationImpact) model.Risk {
+func createRisk(technicalAsset model.TechnicalAsset, impact model.RiskExploitationImpact, dataIds []string) model.Risk {
 	title := "<b>Logging of Sensitive Data</b> risk at <b>" + technicalAsset.Title + "</b>"
 	risk := model.Risk{
 		Category:                     CustomRiskRule.Category(),
@@ -77,8 +78,8 @@ func createRisk(technicalAsset model.TechnicalAsset, impact model.RiskExploitati
 		ExploitationImpact:           impact,
 		Title:                        title,
 		MostRelevantTechnicalAssetId: technicalAsset.Id,
-		DataBreachProbability:        model.Improbable,
-		DataBreachTechnicalAssetIDs:  []string{},
+		DataBreachProbability:        model.Possible,
+		DataBreachTechnicalAssetIDs:  dataIds,
 	}
 	risk.SyntheticId = risk.Category.Id + "@" + technicalAsset.Id
 	return risk
