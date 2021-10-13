@@ -12,6 +12,6 @@ The reason behind the scoring is that even if the asset is logged, it must be va
 ## Using
 Clone the repo, build the image and run it as below.
 ```
-docker run --rm -it -v "$(pwd)":/data threagile -custom-risk-rules-plugins accidental-logging-of-sensitive-data-rule.so,missing-monitoring-rule.so -verbose -model /data/threagile-example-model.yaml -output /data
+docker run --rm -it -v "$(pwd)":/data threagile -custom-risk-rules-plugins accidental-logging-of-sensitive-data-rule.so,missing-monitoring-rule.so,missing-audit-of-sensitive-asset-rule.so,credential-stored-outside-of-vault-rule.so -verbose -model /data/threagile-example-model.yaml -output /data
 
 ```

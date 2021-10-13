@@ -4,11 +4,11 @@ import (
 	"github.com/threagile/threagile/model"
 )
 
-type longLivedCredentialOutsideOfVault string
+type credentialStoredOutsideOfVault string
 
-var CustomRiskRule longLivedCredentialOutsideOfVault
+var CustomRiskRule credentialStoredOutsideOfVault
 
-func (r longLivedCredentialOutsideOfVault) Category() model.RiskCategory {
+func (r credentialStoredOutsideOfVault) Category() model.RiskCategory {
 	return model.RiskCategory{
 		Id:                         "credential-stored-outside-of-vault",
 		Title:                      "Credential Stored Outside Of Vault",
@@ -29,11 +29,11 @@ func (r longLivedCredentialOutsideOfVault) Category() model.RiskCategory {
 	}
 }
 
-func (r longLivedCredentialOutsideOfVault) SupportedTags() []string {
+func (r credentialStoredOutsideOfVault) SupportedTags() []string {
 	return []string{"credential", "credential-lifetime:unknown/hardcoded", "credential-lifetime:unlimited", "credential-lifetime:long", "credential-lifetime:short", "credential-lifetime:auto-rotation", "credential-lifetime:manual-rotation"}
 }
 
-func (r longLivedCredentialOutsideOfVault) GenerateRisks() []model.Risk {
+func (r credentialStoredOutsideOfVault) GenerateRisks() []model.Risk {
 	risks := make([]model.Risk, 0)
 	for _, id := range model.SortedTechnicalAssetIDs() {
 		technicalAsset := model.ParsedModelRoot.TechnicalAssets[id]
@@ -41,8 +41,8 @@ func (r longLivedCredentialOutsideOfVault) GenerateRisks() []model.Risk {
 			continue
 		}
 		storesCredential := false
-		dataAtRisk := make([]string, 0)
 		var exploitationImpact model.RiskExploitationImpact
+		mostCriticalDataId := ""
 		datas := technicalAsset.DataAssetsStoredSorted()
 		exploitationImpact = model.MediumImpact
 		exploitationProbability := model.Likely
@@ -53,7 +53,6 @@ func (r longLivedCredentialOutsideOfVault) GenerateRisks() []model.Risk {
 				breachProbability := model.Probable
 				exploitProbability := model.Likely
 				storesCredential = true
-				dataAtRisk = append(dataAtRisk, data.Id)
 				if data.IsTaggedWithAny("credential-lifetime:unknown/hardcoded", "credential-lifetime:unlimited") {
 					impact = model.VeryHighImpact
 					exploitProbability = model.VeryLikely
@@ -69,6 +68,7 @@ func (r longLivedCredentialOutsideOfVault) GenerateRisks() []model.Risk {
 				}
 				if dataBreachProbability <= breachProbability {
 					dataBreachProbability = breachProbability
+					mostCriticalDataId = data.Id
 				}
 				if exploitationProbability <= exploitProbability {
 					exploitationProbability = exploitProbability
@@ -80,13 +80,13 @@ func (r longLivedCredentialOutsideOfVault) GenerateRisks() []model.Risk {
 				exploitationProbability = exploitationProbability - 1
 				dataBreachProbability = dataBreachProbability - 1
 			}
-			risks = append(risks, createRisk(technicalAsset, exploitationImpact, exploitationProbability, dataAtRisk, dataBreachProbability))
+			risks = append(risks, createRisk(technicalAsset, exploitationImpact, exploitationProbability, mostCriticalDataId, dataBreachProbability))
 		}
 	}
 	return risks
 }
 
-func createRisk(technicalAsset model.TechnicalAsset, impact model.RiskExploitationImpact, probability model.RiskExploitationLikelihood, dataAtRisk []string, dataProbability model.DataBreachProbability) model.Risk {
+func createRisk(technicalAsset model.TechnicalAsset, impact model.RiskExploitationImpact, probability model.RiskExploitationLikelihood, mostCriticalDataId string, dataProbability model.DataBreachProbability) model.Risk {
 	title := "<b>Credential stored outside of vault</b> risk at <b>" + technicalAsset.Title + "</b>"
 	risk := model.Risk{
 		Category:                     CustomRiskRule.Category(),
@@ -95,8 +95,9 @@ func createRisk(technicalAsset model.TechnicalAsset, impact model.RiskExploitati
 		ExploitationImpact:           impact,
 		Title:                        title,
 		MostRelevantTechnicalAssetId: technicalAsset.Id,
+		MostRelevantDataAssetId:      mostCriticalDataId,
 		DataBreachProbability:        dataProbability,
-		DataBreachTechnicalAssetIDs:  dataAtRisk,
+		DataBreachTechnicalAssetIDs:  []string{},
 	}
 	risk.SyntheticId = risk.Category.Id + "@" + technicalAsset.Id
 	return risk
