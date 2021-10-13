@@ -1,0 +1,194 @@
+{
+	"Threagile Base":  {
+		"scope": "yaml",
+		"prefix": "base",
+		"body": ["threagile_version: 1.0.0",
+		"title: $1",		
+		"date: $CURRENT_YEAR-$CURRENT_MONTH-$CURRENT_DATE",		
+		"author:",
+		"  name: $2",
+		"business_criticality: ${3|archive,operational,important,critical,mission-critical|}",
+		"abuse_cases:",
+		"security_requirements:",
+		"tags_available:",
+		"data_assets:$0",
+		"technical_assets:",
+		"trust_boundaries:",		
+		"shared_runtimes:",
+		"individual_risk_categories:",
+		"risk_tracking:"]
+	},
+	"Data Asset": {
+		"scope": "yaml",
+		"prefix": "data",
+		"body": [
+			"${1:DataAssetName}:",
+			"  id: ${2:id}",
+			"  description: $0",
+			"  usage: ${3|business,devops|}",
+			"  tags:",
+			"  origin:",
+			"  owner:",
+			"  quantity: ${4|very-few,few,many,very-many|}",
+			"  confidentiality: ${5|public,internal,restricted,confidential,strictly-confidential|}",
+			"  integrity: ${6|archive,operational,important,critical,mission-critical|}",
+			"  availability: ${7|archive,operational,important,critical,mission-critical|}",
+			"  justification_cia_rating:"
+		]
+	},
+	"Technical Asset": {
+		"scope": "yaml",
+		"prefix": "technical",
+		"body": [
+			"${1:TechnicalAssetName}:",
+			"  id: ${2:id}",
+			"  description: $0",
+			"  type: ${3|external-entity,process,datastore|}",
+			"  usage: ${4|business,devops|}",
+			"  used_as_client_by_human: ${5|true,false|}",
+			"  out_of_scope: false",
+			"  justification_out_of_scope:",
+			"  size: ${6|system,service,application,component|}",
+			"  technology: $7",
+			"  tags:",
+			"  internet: ${8|false,true|}",
+			"  machine: ${9|physical,virtual,container,serverless|}",
+			"  encryption: ${10|none,transparent,data-with-symmetric-shared-key,data-with-asymmetric-shared-key,data-with-enduser-individual-key|}",
+			"  owner:",
+			"  confidentiality: ${11|public,internal,restricted,confidential,strictly-confidential|}",
+			"  integrity: ${12|archive,operational,important,critical,mission-critical|}",
+			"  availability: ${13|archive,operational,important,critical,mission-critical|}",
+			"  justification_cia_rating:",
+			"  multi_tenant: ${14|false,true|}",
+			"  redundant: ${15|false,true|}",
+			"  custom_developed_parts: ${16|true,false|}",
+			"  data_assets_processed: # sequence of IDs to reference",
+			"  data_assets_stored: # sequence of IDs to reference",
+			"  data_formats_accepted:",
+			"  communication_links:"
+		]
+	},
+	"Communication Link": {
+		"scope": "yaml",
+		"prefix": "comm",
+		"body": [
+			"${1:Communication Link Name}:",
+			"  target: ${2:target_id}",
+			"  description: $0",
+			"  protocol: $3",
+			"  authentication: ${4|none,credentials,session-id,token,client-certificate,two-factor,externalized|}",
+			"  authorization: ${5|none,technical-user,enduser-identity-propagation|}",
+			"  tags:",
+			"  vpn: ${6|false,true|}",
+			"  ip_filtered: ${7|false,true|}",
+			"  readonly: ${8|false,true|}",
+			"  usage: ${9|business,devops|}",
+			"  data_assets_sent: # sequence of IDs to reference",
+			"  data_assets_received: # sequence of IDs to reference"
+		]
+	},
+	"Trust Boundary":{
+		"scope": "yaml",
+		"prefix": "trust",
+		"body": [
+			"${1:Trust Boundary Name}:",
+			"  id: $2",
+			"  description:",
+			"  type: ${3|network-on-prem,network-dedicated-hoster,network-virtual-lan,network-cloud-provider,network-cloud-security-group,network-policy-namespace-isolation,execution-environment|}",
+			"  tags:",
+			"  technical_assets_inside: $0",
+			"  trust_boundaries_nested: # sequence of IDs to reference"
+		]
+	},
+	"Default zones": {
+		"scope": "yaml",
+		"prefix": "trust",
+		"body": [
+			"Controlled:",
+			"  id: controlled",
+			"  description: Internal network",
+			"  type: network-dedicated-hoster",
+			"  tags:",
+			"  technical_assets_inside:",
+			"  trust_boundaries_nested:",
+			"    - non-exposed",
+			"    - office-network",
+			"Non-exposed:",
+			"  id: non-exposed",
+			"  description: Non Exposed Zone",
+			"  type: network-virtual-lan",
+			"  tags:",
+			"  technical_assets_inside:",
+			"  trust_boundaries_nested:",
+			"Office Network:",
+			"  id: office-network",
+			"  description: Office network",
+			"  type: network-virtual-lan",
+			"  tags:",
+			"  technical_assets_inside:",
+			"  trust_boundaries_nested:"
+		]
+	},
+	"Shared Runtime":{
+		"scope": "yaml",
+		"prefix": "run",
+		"body": [
+			"${1:Shared Runtime Name}:",
+			"  id: ${2:id}",
+			"  description:",
+			"  tags: ",
+			"  technical_assets_running: $0"
+		]
+	},
+	"Risk Category": {
+		"scope": "yaml",
+		"prefix": "risk",
+		"body": [
+			"${1:Risk Category Name}:",
+			"  id: $2",
+			"  description: $3",
+			"  impact: $4",
+			"  asvs:",
+			"  cheat_sheet:",
+			"  action:",
+			"  mitigation:",
+			"  check:",
+			"  function: $5",
+			"  stride: $6",
+			"  detection_logic:",
+			"  risk_assessment:",
+			"  false_positives:",
+			"  model_failure_possible_reason: $7",
+			"  cwe: $8",
+			"  risks_identified:"
+		]
+	},
+	"Risk Instance":{
+		"scope": "yaml",
+		"prefix": "risk",
+		"body": [
+			"${1:IndividualRiskInstanceName}:",
+        	"  severity: $2",
+        	"  exploitation_likelihood: $3",
+        	"  exploitation_impact: $4",
+        	"  data_breach_probability: $5",
+        	"  data_breach_technical_assets: $0",
+        	"  most_relevant_data_asset: $6",
+        	"  most_relevant_technical_asset: $7",
+        	"  most_relevant_trust_boundary: $8",
+        	"  most_relevant_shared_runtime: $9"
+		]
+	},
+	"Risk Tracking": {
+		"scope": "yaml",
+		"prefix": "track",
+		"body": [
+			"${1:RiskID}: # wildcards (*) between the @ characters are possible",
+			"  status: ${2|unchecked,in-discussion,accepted,in-progress,mitigated,false-positive|}",
+			"  justification: $0",
+			"  ticket:",
+			"  date:",
+			"  checked_by:"
+		]
+	}
+}
