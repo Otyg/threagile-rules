@@ -68,5 +68,5 @@ USER 1000:1000
 ENV PATH=/app:$PATH
 ENV GIN_MODE=release
 
-ENTRYPOINT ["/app/threagile"]
+ENTRYPOINT ["/app/threagile", "-custom-risk-rules-plugins accidental-logging-of-sensitive-data-rule.so,missing-monitoring-rule.so,missing-audit-of-sensitive-asset-rule.so,credential-stored-outside-of-vault-rule.so"]
 CMD ["-help"]
