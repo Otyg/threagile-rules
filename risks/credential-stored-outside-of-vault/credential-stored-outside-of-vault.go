@@ -30,7 +30,7 @@ func (r longLivedCredentialOutsideOfVault) Category() model.RiskCategory {
 }
 
 func (r longLivedCredentialOutsideOfVault) SupportedTags() []string {
-	return []string{"credential", "credential-lifetime:unknown/unlimited", "credential-lifetime:long", "credential-lifetime:short", "credential-lifetime:auto-rotation", "credential-lifetime:manual-rotation"}
+	return []string{"credential", "credential-lifetime:unknown/unlimited/hardcoded", "credential-lifetime:long", "credential-lifetime:short", "credential-lifetime:auto-rotation", "credential-lifetime:manual-rotation"}
 }
 
 func (r longLivedCredentialOutsideOfVault) GenerateRisks() []model.Risk {
@@ -40,30 +40,44 @@ func (r longLivedCredentialOutsideOfVault) GenerateRisks() []model.Risk {
 		if technicalAsset.OutOfScope || technicalAsset.Technology == model.Vault {
 			continue
 		}
-		storesCredential = false
+		storesCredential := false
 		dataAtRisk := make([]string, 0)
+		var worstImpact model.RiskExploitationImpact
 		datas := technicalAsset.DataAssetsStoredSorted()
+		impact := model.LowImpact
 		for _, data := range datas {
 			if data.IsTaggedWithAny(r.SupportedTags()...) {
 				storesCredential = true
 				dataAtRisk = append(dataAtRisk, data.Id)
+				if data.IsTaggedWithAny("credential-lifetime:unknown/unlimited/hardcoded") {
+					impact = model.VeryHighImpact
+				} else if data.IsTaggedWithAny("credential-lifetime:long") {
+					impact = model.HighImpact
+				} else if data.IsTaggedWithAny("credential-lifetime:short") {
+					impact = model.MediumImpact
+				}
+				if data.IsTaggedWithAny("credential-lifetime:auto-rotation") {
+					impact = model.LowImpact
+				} else if data.IsTaggedWithAny("credential-lifetime:manual-rotation") {
+					impact = impact - 1
+				}
+				if impact >= worstImpact {
+					worstImpact = impact
+				}
 			}
 		}
 		if storesCredential {
-			impact := model.HighImpact
+
 			probability := model.VeryLikely
 			dataProbability := model.Probable
 			if technicalAsset.Confidentiality == model.Confidential {
-				impact = model.MediumImpact
 				probability = model.Likely
 				dataProbability = model.Possible
-			}
-			else if technicalAsset.Confidentiality == model.StrictlyConfidential {
-				impact = model.LowImpact
-				probability = model.UnLikely
+			} else if technicalAsset.Confidentiality == model.StrictlyConfidential {
+				probability = model.Unlikely
 				dataProbability = model.Improbable
 			}
-			risks = append(risks, createRisk(technicalAsset, impact, probability, dataAtRisk, dataProbability))
+			risks = append(risks, createRisk(technicalAsset, worstImpact, probability, dataAtRisk, dataProbability))
 		}
 	}
 	return risks
