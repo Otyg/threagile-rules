@@ -99,6 +99,6 @@ func createRisk(technicalAsset model.TechnicalAsset, impact model.RiskExploitati
 		DataBreachProbability:        dataProbability,
 		DataBreachTechnicalAssetIDs:  []string{},
 	}
-	risk.SyntheticId = risk.Category.Id + "@" + technicalAsset.Id
+	risk.SyntheticId = risk.Category.Id + "@" + mostCriticalDataId + "@" + technicalAsset.Id
 	return risk
 }
