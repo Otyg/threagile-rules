@@ -35,52 +35,36 @@ func (r credentialStoredOutsideOfVault) SupportedTags() []string {
 
 func (r credentialStoredOutsideOfVault) GenerateRisks() []model.Risk {
 	risks := make([]model.Risk, 0)
-	for _, id := range model.SortedTechnicalAssetIDs() {
-		technicalAsset := model.ParsedModelRoot.TechnicalAssets[id]
-		if technicalAsset.OutOfScope || technicalAsset.Technology == model.Vault {
-			continue
+	for _, data := range model.DataAssetsTaggedWithAny(r.SupportedTags()...) {
+		// Consider credentials without a lifetime tag as unknown/hardcoded
+		exploitationImpact := model.VeryHighImpact
+		exploitationProbability := model.Frequent
+		dataBreachProbability := model.Probable
+		if data.IsTaggedWithAny("credential-lifetime:unlimited") {
+			exploitationProbability = model.VeryLikely
+		} else if data.IsTaggedWithAny("credential-lifetime:long") {
+			exploitationImpact = model.HighImpact
+			exploitationProbability = model.VeryLikely
+		} else if data.IsTaggedWithAny("credential-lifetime:short") {
+			exploitationImpact = model.MediumImpact
+			exploitationProbability = model.Likely
 		}
-		storesCredential := false
-		var exploitationImpact model.RiskExploitationImpact
-		mostCriticalDataId := ""
-		datas := technicalAsset.DataAssetsStoredSorted()
-		exploitationImpact = model.MediumImpact
-		exploitationProbability := model.Likely
-		dataBreachProbability := model.Improbable
-		for _, data := range datas {
-			if data.IsTaggedWithAny(r.SupportedTags()...) {
-				impact := model.MediumImpact
-				breachProbability := model.Probable
-				exploitProbability := model.Likely
-				storesCredential = true
-				if data.IsTaggedWithAny("credential-lifetime:unknown/hardcoded", "credential-lifetime:unlimited") {
-					impact = model.VeryHighImpact
-					exploitProbability = model.VeryLikely
-				} else if data.IsTaggedWithAny("credential-lifetime:long", "credential-lifetime:short") {
-					impact = model.HighImpact
-				}
-				if data.IsTaggedWithAny("credential-lifetime:manual-rotation", "credential-lifetime:auto-rotation") && !data.IsTaggedWithAny("credential-lifetime:unknown/hardcoded") {
-					impact = impact - 1
-					breachProbability = model.Possible
-				}
-				if exploitationImpact <= impact {
-					exploitationImpact = impact
-				}
-				if dataBreachProbability <= breachProbability {
-					dataBreachProbability = breachProbability
-					mostCriticalDataId = data.Id
-				}
-				if exploitationProbability <= exploitProbability {
-					exploitationProbability = exploitProbability
-				}
+		if data.IsTaggedWithAny("credential-lifetime:manual-rotation", "credential-lifetime:auto-rotation") && !data.IsTaggedWithAny("credential-lifetime:unknown/hardcoded") {
+			exploitationImpact = exploitationImpact - 1
+			exploitationProbability = exploitationProbability - 1
+			dataBreachProbability = model.Possible
+		}
+		for _, technicalAsset := range data.StoredByTechnicalAssetsSorted() {
+			if technicalAsset.OutOfScope || technicalAsset.Technology == model.Vault {
+				continue
 			}
-		}
-		if storesCredential {
 			if technicalAsset.Confidentiality == model.StrictlyConfidential && technicalAsset.Encryption != model.NoneEncryption {
-				exploitationProbability = exploitationProbability - 1
-				dataBreachProbability = dataBreachProbability - 1
+				if exploitationProbability > model.Unlikely {
+					exploitationProbability = exploitationProbability - 1
+				}
+				dataBreachProbability = model.Improbable
 			}
-			risks = append(risks, createRisk(technicalAsset, exploitationImpact, exploitationProbability, mostCriticalDataId, dataBreachProbability))
+			risks = append(risks, createRisk(technicalAsset, exploitationImpact, exploitationProbability, data.Id, dataBreachProbability))
 		}
 	}
 	return risks
@@ -97,8 +81,8 @@ func createRisk(technicalAsset model.TechnicalAsset, impact model.RiskExploitati
 		MostRelevantTechnicalAssetId: technicalAsset.Id,
 		MostRelevantDataAssetId:      mostCriticalDataId,
 		DataBreachProbability:        dataProbability,
-		DataBreachTechnicalAssetIDs:  []string{},
+		DataBreachTechnicalAssetIDs:  []string{technicalAsset.Id},
 	}
-	risk.SyntheticId = risk.Category.Id + "@" + mostCriticalDataId + "@" + technicalAsset.Id
+	risk.SyntheticId = risk.Category.Id + "@" + technicalAsset.Id
 	return risk
 }
