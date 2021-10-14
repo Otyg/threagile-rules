@@ -16,7 +16,7 @@ Any asset which is not of the type vault that stores data assets tagged with any
 |------ | ------ |
 | `PII`| Personal Identifiable Information|
 | `credential` | Credential, or similar such as encryption key|
-| `credential-lifetime:unknown/hardcoded`| The life time credential is unknown and is probably hardcoded and hard to rotate|
+| `credential-lifetime:unknown/hardcoded`| The life time credential is unknown and is probably hardcoded and hard or impossible to rotate|
 | `credential-lifetime:unlimited`| The credential has no specified life-time and won't expired |
 | `credential-lifetime:long`| The credential has a long life-time (months or more) before it expires |
 | `credential-lifetime:short`| The credential has a short life time (less than a month) before it expires |
