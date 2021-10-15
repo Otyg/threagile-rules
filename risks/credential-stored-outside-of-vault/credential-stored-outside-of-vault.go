@@ -36,17 +36,16 @@ func (r credentialStoredOutsideOfVault) SupportedTags() []string {
 func (r credentialStoredOutsideOfVault) GenerateRisks() []model.Risk {
 	risks := make([]model.Risk, 0)
 	for _, data := range model.DataAssetsTaggedWithAny(r.SupportedTags()...) {
-		// Consider credentials without a lifetime tag as unknown/hardcoded
-		exploitationImpact := model.VeryHighImpact
+		// credential-lifetime:unlimited set as default
+		exploitationImpact := model.MediumImpact
 		exploitationProbability := model.Frequent
 		dataBreachProbability := model.Probable
-		if data.IsTaggedWithAny("credential-lifetime:unlimited") {
-			exploitationProbability = model.VeryLikely
-		} else if data.IsTaggedWithAny("credential-lifetime:long") {
+		if data.IsTaggedWithAny("credential-lifetime:unknown/hardcoded") || !data.IsTaggedWithAny("credential-lifetime:unlimited", "credential-lifetime:long", "credential-lifetime:short") {
+			// If only credential-tag is present, assume unknown
 			exploitationImpact = model.HighImpact
+		} else if data.IsTaggedWithAny("credential-lifetime:long") {
 			exploitationProbability = model.VeryLikely
 		} else if data.IsTaggedWithAny("credential-lifetime:short") {
-			exploitationImpact = model.MediumImpact
 			exploitationProbability = model.Likely
 		}
 		if data.IsTaggedWithAny("credential-lifetime:manual-rotation", "credential-lifetime:auto-rotation") && !data.IsTaggedWithAny("credential-lifetime:unknown/hardcoded") {
@@ -59,6 +58,7 @@ func (r credentialStoredOutsideOfVault) GenerateRisks() []model.Risk {
 				continue
 			}
 			if technicalAsset.Confidentiality == model.StrictlyConfidential && technicalAsset.Encryption != model.NoneEncryption {
+				// Assume that a technical asset classed for Strictly Confidential is well protected
 				if exploitationProbability > model.Unlikely {
 					exploitationProbability = exploitationProbability - 1
 				}
