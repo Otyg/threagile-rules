@@ -51,7 +51,7 @@ COPY --from=build-threagile /app/accidental-logging-of-sensitive-data-rule.so /a
 COPY --from=build-threagile /app/missing-audit-of-sensitive-asset-rule.so /app/missing-audit-of-sensitive-asset-rule.so
 COPY --from=build-threagile /app/credential-stored-outside-of-vault-rule.so /app/credential-stored-outside-of-vault-rule.so
 COPY --from=build-threagile /app/insecure-handling-of-sensitive-data-rule.so /app/insecure-handling-of-sensitive-data-rule.so
-
+COPY --from=build-threagile /app/running-as-privileged-user.so /app/running-as-privileged-user.so
 RUN mkdir /data
 
 RUN chown -R 1000:1000 /app /data
@@ -60,5 +60,5 @@ USER 1000:1000
 ENV PATH=/app:$PATH
 ENV GIN_MODE=release
 
-ENTRYPOINT ["/app/threagile", "-custom-risk-rules-plugins", "accidental-logging-of-sensitive-data-rule.so,missing-monitoring-rule.so,missing-audit-of-sensitive-asset-rule.so,credential-stored-outside-of-vault-rule.so,insecure-handling-of-sensitive-data-rule.so"]
+ENTRYPOINT ["/app/threagile", "-custom-risk-rules-plugins", "accidental-logging-of-sensitive-data-rule.so,missing-monitoring-rule.so,missing-audit-of-sensitive-asset-rule.so,credential-stored-outside-of-vault-rule.so,insecure-handling-of-sensitive-data-rule.so,running-as-privileged-user.so"]
 CMD ["-help"]
