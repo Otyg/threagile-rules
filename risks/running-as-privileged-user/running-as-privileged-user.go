@@ -57,7 +57,7 @@ func (r runningAsPrivilegedUser) GenerateRisks() []model.Risk {
 }
 
 func createRisk(technicalAsset model.TechnicalAsset, impact model.RiskExploitationImpact, likelihood model.RiskExploitationLikelihood) model.Risk {
-	title := "<b>Credential stored outside of vault</b> risk at <b>" + technicalAsset.Title + "</b>"
+	title := "<b>Running as privileged user</b> risk at <b>" + technicalAsset.Title + "</b>"
 	risk := model.Risk{
 		Category:                     CustomRiskRule.Category(),
 		Severity:                     model.CalculateSeverity(likelihood, impact),
