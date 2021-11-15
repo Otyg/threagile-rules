@@ -53,6 +53,7 @@ COPY --from=build-threagile /app/credential-stored-outside-of-vault-rule.so /app
 COPY --from=build-threagile /app/insecure-handling-of-sensitive-data-rule.so /app/insecure-handling-of-sensitive-data-rule.so
 COPY --from=build-threagile /app/running-as-privileged-user.so /app/running-as-privileged-user.so
 COPY --from=build-threagile /app/use-of-weak-cryptography.so /app/use-of-weak-cryptography.so
+COPY --from=build-threagile /app/secure-communication.so /app/secure-communication.so
 RUN mkdir /data
 
 RUN chown -R 1000:1000 /app /data
@@ -61,5 +62,5 @@ USER 1000:1000
 ENV PATH=/app:$PATH
 ENV GIN_MODE=release
 
-ENTRYPOINT ["/app/threagile", "-custom-risk-rules-plugins", "accidental-logging-of-sensitive-data-rule.so,missing-monitoring-rule.so,missing-audit-of-sensitive-asset-rule.so,credential-stored-outside-of-vault-rule.so,insecure-handling-of-sensitive-data-rule.so,running-as-privileged-user.so,use-of-weak-cryptography.so"]
+ENTRYPOINT ["/app/threagile", "-custom-risk-rules-plugins", "accidental-logging-of-sensitive-data-rule.so,missing-monitoring-rule.so,missing-audit-of-sensitive-asset-rule.so,credential-stored-outside-of-vault-rule.so,insecure-handling-of-sensitive-data-rule.so,running-as-privileged-user.so,use-of-weak-cryptography.so,secure-communication.so"]
 CMD ["-help"]
