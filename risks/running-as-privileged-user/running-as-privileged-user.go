@@ -37,7 +37,7 @@ func (r runningAsPrivilegedUser) GenerateRisks() []model.Risk {
 	risks := make([]model.Risk, 0)
 	for _, id := range model.SortedTechnicalAssetIDs() {
 		techAsset := model.ParsedModelRoot.TechnicalAssets[id]
-		if techAsset.OutOfScope {
+		if techAsset.OutOfScope || techAsset.Technology.IsClient() {
 			continue
 		}
 		if !techAsset.IsTaggedWithAny(CustomRiskRule.SupportedTags()...) {
