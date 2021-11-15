@@ -40,14 +40,33 @@ func (r useOfWeakCryptography) GenerateRisks() []model.Risk {
 		if techAsset.OutOfScope || techAsset.Technology.IsClient() {
 			continue
 		}
-		if techAsset.Encryption != "None" {
-
+		if techAsset.Encryption != model.NoneEncryption {
+			var mostRelevantDataAssetId string
+			var highestConfidentiality model.Confidentiality = model.Public
+			var impact model.RiskExploitationImpact
+			for _, data := range techAsset.DataAssetsStoredSorted() {
+				if data.Confidentiality >= highestConfidentiality {
+					mostRelevantDataAssetId = data.Id
+					highestConfidentiality = data.Confidentiality
+					switch data.Confidentiality {
+					case model.Restricted:
+						impact = model.MediumImpact
+					case model.Confidential:
+						impact = model.HighImpact
+					case model.StrictlyConfidential:
+						impact = model.VeryHighImpact
+					default:
+						impact = model.LowImpact
+					}
+				}
+			}
+			risks = append(risks, createRisk(techAsset, impact, mostRelevantDataAssetId))
 		}
 	}
 	return risks
 }
 
-func createRisk(technicalAsset model.TechnicalAsset, impact model.RiskExploitationImpact) model.Risk {
+func createRisk(technicalAsset model.TechnicalAsset, impact model.RiskExploitationImpact, mostRelevantDataAssetId string) model.Risk {
 	title := "<b>Use of weak cryptography</b> risk at <b>" + technicalAsset.Title + "</b>"
 	risk := model.Risk{
 		Category:                     CustomRiskRule.Category(),
@@ -56,7 +75,9 @@ func createRisk(technicalAsset model.TechnicalAsset, impact model.RiskExploitati
 		ExploitationImpact:           impact,
 		Title:                        title,
 		MostRelevantTechnicalAssetId: technicalAsset.Id,
-		DataBreachTechnicalAssetIDs:  []string{},
+		DataBreachTechnicalAssetIDs:  []string{technicalAsset.Id},
+		MostRelevantDataAssetId:      mostRelevantDataAssetId,
+		DataBreachProbability:        model.Possible,
 	}
 	risk.SyntheticId = risk.Category.Id + "@" + technicalAsset.Id
 	return risk
