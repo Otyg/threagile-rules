@@ -17,7 +17,7 @@ func (r useOfWeakCrypto) Category() model.RiskCategory {
 		ASVS:                       "v4.0.3-6.2 - Stored cryptography: Algorithms",
 		CheatSheet:                 "https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html",
 		Action:                     "Cryptography",
-		Mitigation:                 "Use vetted and proved cryptographic libraries, avoid custom coded routines.",
+		Mitigation:                 "Ensure to use algoritms, modes and libraries that has been vetted and proven by industry and/or governments.",
 		Check:                      "Referenced ASVS chapters and cheat sheets",
 		Function:                   model.Development,
 		STRIDE:                     model.InformationDisclosure,

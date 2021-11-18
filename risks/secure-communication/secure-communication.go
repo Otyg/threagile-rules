@@ -17,7 +17,7 @@ func (r secureCommunication) Category() model.RiskCategory {
 		ASVS:                       "v4.0.3-9.X - Communication",
 		CheatSheet:                 "https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Protection_Cheat_Sheet.html",
 		Action:                     "Cryptography",
-		Mitigation:                 "Stay current with recommended industry advice on secure configuration of TLS, or similar.",
+		Mitigation:                 "Ensure to use algoritms, modes and libraries that has been vetted and proven by industry and/or governments and follow recommendations and guidelines.",
 		Check:                      "Referenced ASVS chapters and cheat sheets",
 		Function:                   model.Operations,
 		STRIDE:                     model.InformationDisclosure,
