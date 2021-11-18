@@ -10,14 +10,14 @@ var CustomRiskRule useOfWeakCrypto
 
 func (r useOfWeakCrypto) Category() model.RiskCategory {
 	return model.RiskCategory{
-		Id:                         "use-of-weak-cryptograhpy",
-		Title:                      "Use Of Weak Cryptography",
+		Id:                         "use-of-weak-cryptograhpy-at-rest",
+		Title:                      "Use Of Weak Cryptography At Rest",
 		Description:                "To avoid weak cryptography ensure to use algoritms, modes and libraries that has been vetted and proven by industry and/or governments.",
 		Impact:                     "Weak cryptography can result in information disclosure and a false sense of security.",
 		ASVS:                       "v4.0.3-6.2 - Stored cryptography: Algorithms",
 		CheatSheet:                 "https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html",
 		Action:                     "Cryptography",
-		Mitigation:                 "Use vetted and proved cryptographic libraries, avoid custom coded routines.",
+		Mitigation:                 "Ensure to use algoritms, modes and libraries that has been vetted and proven by industry and/or governments.",
 		Check:                      "Referenced ASVS chapters and cheat sheets",
 		Function:                   model.Development,
 		STRIDE:                     model.InformationDisclosure,
@@ -65,7 +65,7 @@ func (r useOfWeakCrypto) GenerateRisks() []model.Risk {
 }
 
 func createRisk(technicalAsset model.TechnicalAsset, impact model.RiskExploitationImpact, mostRelevantDataAssetId string) model.Risk {
-	title := "<b>Use of weak cryptography</b> risk at <b>" + technicalAsset.Title + "</b>"
+	title := "<b>Use of weak cryptography at rest</b> risk at <b>" + technicalAsset.Title + "</b>"
 	risk := model.Risk{
 		Category:                     CustomRiskRule.Category(),
 		Severity:                     model.CalculateSeverity(model.Unlikely, impact),
